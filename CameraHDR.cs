@@ -22,7 +22,7 @@ namespace SkyTonemapper
 		
 		void Start()
 		{	
-			GetComponent<Camera> ().hdr = true;
+//			GetComponent<Camera> ().hdr = true; //HDR doesn't work in KSP no matter what
 		}
 
 		public void settings(float inExposure)

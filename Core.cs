@@ -19,7 +19,7 @@ namespace SkyTonemapper
 	{
 		string path;
 		Material TonemapMaterial;
-		public float exposure = 250;
+		[Persistent] public float exposure = 250;
 		Camera scaledSpaceCamera;
 		bool initiated=false;
 		bool isActive = false;
@@ -45,7 +45,15 @@ namespace SkyTonemapper
 			
 			if (isActive)
 			{
-				if (!initiated) { 
+				if (!initiated)
+				{ 
+
+					string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+					UriBuilder uri = new UriBuilder (codeBase);
+					path = Uri.UnescapeDataString(uri.Path);
+					path=Path.GetDirectoryName (path);
+
+
 					//gets the cameras
 					Camera[] cams = Camera.allCameras;
 					for (int i=0; i<cams.Length; i++) 
@@ -54,12 +62,14 @@ namespace SkyTonemapper
 							//if (cams [i].name == "Camera 01")
 							scaledSpaceCamera = cams [i];
 					}
+
+					loadSettings();
+
 					initiated=true;
 				}
 				
 				if (scaledSpaceCamera)
 				{
-					//				if (scaledSpaceCamera.gameObject.GetComponent<cameraHDR> () != null)
 					if (scaledSpaceCamera.gameObject.GetComponent<cameraHDR> ())
 					{
 						scaledSpaceCamera.gameObject.GetComponent<cameraHDR> ().settings (exposure);										
@@ -69,10 +79,7 @@ namespace SkyTonemapper
 					else
 						//if (scaledSpaceCamera.gameObject.GetComponent<cameraHDR> () == null)
 					{
-						string codeBase = Assembly.GetExecutingAssembly().CodeBase;
-						UriBuilder uri = new UriBuilder (codeBase);
-						path = Uri.UnescapeDataString(uri.Path);
-						path=Path.GetDirectoryName (path);
+
 						
 						TonemapMaterial=GetMatFromShader("CompiledToneMapper.shader",path+"/SkyTonemapper");
 						
@@ -110,10 +117,22 @@ namespace SkyTonemapper
 		internal override void OnDestroy()
 		{
 			if (isActive){
+				saveSettings();
 				Destroy (TonemapMaterial);
 				Component.Destroy(scaledSpaceCamera.gameObject.GetComponent<cameraHDR> ());
-				scaledSpaceCamera.hdr = false;
 			}
+		}
+
+		public void loadSettings ()
+		{
+			ConfigNode cnToLoad = ConfigNode.Load (path + "/settings.cfg");
+			ConfigNode.LoadObjectFromConfig (this, cnToLoad);
+		}
+		
+		public void saveSettings ()
+		{
+			ConfigNode cnTemp = ConfigNode.CreateConfigFromObject (this);
+			cnTemp.Save (path + "/settings.cfg");
 		}
 	}
 }
